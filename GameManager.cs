@@ -11,12 +11,14 @@ public class GameManager : MonoBehaviour {
     public Button downButton;
     public Button leftButton;
     public Button rightButton;
+    public Button backButton;
     public Text timerText;
     public Text gameOverText;
     public float timeLimit = 60f;
     private bool readyForInput;
     private Player player;
     private Queue<Vector2> moveQueue = new Queue<Vector2>();
+    private Stack<Vector2> moveHistory = new Stack<Vector2>();
     private float remainingTime;
 
     void Start() {
@@ -25,13 +27,16 @@ public class GameManager : MonoBehaviour {
         downButton.onClick.AddListener(() => MovePlayer(Vector2.down));
         leftButton.onClick.AddListener(() => MovePlayer(Vector2.left));
         rightButton.onClick.AddListener(() => MovePlayer(Vector2.right));
+        backButton.onClick.AddListener(() => MoveBack());
         ResetScene();
     }
 
     void Update() {
         if (moveQueue.Count > 0 && readyForInput) {
             readyForInput = false;
-            player.Move(moveQueue.Dequeue());
+            Vector2 move = moveQueue.Dequeue();
+            player.Move(move);
+            moveHistory.Push(move);
             nextButton.SetActive(IsLevelComplete());
         } else {
             readyForInput = true;
@@ -41,9 +46,9 @@ public class GameManager : MonoBehaviour {
     }
 
     void UpdateTimer() {
-        if (nextButton.activeSelf) { // Vérifiez si le bouton Next est actif
-        return; // Si c'est le cas, sortez de la fonction sans mettre à jour le chronomètre
-    }
+        if (nextButton.activeSelf) {
+            return;
+        }
         remainingTime -= Time.deltaTime;
         if (remainingTime <= 0) {
             remainingTime = 0;
@@ -51,6 +56,7 @@ public class GameManager : MonoBehaviour {
             downButton.interactable = false;
             leftButton.interactable = false;
             rightButton.interactable = false;
+            backButton.interactable = false;
             gameOverText.gameObject.SetActive(true);
         }
         timerText.text = $"Time: {Mathf.FloorToInt(remainingTime)}";
@@ -61,6 +67,19 @@ public class GameManager : MonoBehaviour {
             moveQueue.Enqueue(direction);
         }
     }
+
+    void MoveBack() {
+    if (moveHistory.Count > 0) {
+        Vector2 lastMove = moveHistory.Pop();
+        Vector2 oppositeMove = -lastMove;
+        player.Move(oppositeMove);
+        Box[] boxes = FindObjectsOfType<Box>();
+        foreach (var box in boxes) {
+            box.MoveBack();
+        }
+    }
+}
+
 
     public void NextLevel() {
         nextButton.SetActive(false);
@@ -74,9 +93,12 @@ public class GameManager : MonoBehaviour {
         nextButton.SetActive(false);
         StartCoroutine(ResetSceneAsync());
         upButton.interactable = true;
-    downButton.interactable = true;
-    leftButton.interactable = true;
-    rightButton.interactable = true;
+        downButton.interactable = true;
+        leftButton.interactable = true;
+        rightButton.interactable = true;
+        backButton.interactable = true;
+        moveQueue.Clear();
+        moveHistory.Clear();
     }
 
     bool IsLevelComplete() {
@@ -107,6 +129,6 @@ public class GameManager : MonoBehaviour {
         levelBuilder.Build();
         player = FindObjectOfType<Player>();
         Debug.Log("Level loaded.");
-        readyForInput = true;
+        //readyForInput = true;
     }
 }
