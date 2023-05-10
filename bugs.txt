@@ -1,0 +1,2 @@
+
+La fonction moveBack dans le script GameManager qui permet au bouton back de revenir d'un coup en arriere ne fonctionne pas comme prevu car il fait revenir tous les box en meme temps alors qu'il doit juste faire revenir en arriere le dernier box déplacé
